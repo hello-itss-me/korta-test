@@ -18,6 +18,7 @@ export function DisassemblyForm() {
   const [showScanner, setShowScanner] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const qrReaderRef = useRef<HTMLDivElement>(null);
+  const [cameraPermissionGranted, setCameraPermissionGranted] = useState<boolean | null>(null);
 
   const { fetchProductData } = useProductData(setFormData);
 
@@ -85,8 +86,19 @@ export function DisassemblyForm() {
   };
 
   useEffect(() => {
-    if (showScanner && qrReaderRef.current && !scannerRef.current) {
-      // Initialize Html5Qrcode only when the modal is shown, the ref is set, and the scanner is not already initialized
+    // Check for camera permission status
+    navigator.permissions.query({ name: 'camera' as PermissionName }).then((permissionStatus) => {
+      setCameraPermissionGranted(permissionStatus.state === 'granted');
+
+      permissionStatus.onchange = () => {
+        setCameraPermissionGranted(permissionStatus.state === 'granted');
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (showScanner && qrReaderRef.current && cameraPermissionGranted) {
+      // Initialize Html5Qrcode only when the modal is shown, the ref is set, and camera permission is granted
       scannerRef.current = new Html5Qrcode(qrReaderRef.current.id, {
         formatsToSupport: ["QR_CODE"],
       });
@@ -94,7 +106,7 @@ export function DisassemblyForm() {
         .start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanFailure)
         .catch((err) => {
           console.warn(`Camera start failed: ${err}`);
-          toast.error('Ошибка при запуске камеры');
+          toast.error('Ошибка при запуске камеры. Пожалуйста, проверьте разрешение на использование камеры в настройках браузера.');
         });
     }
 
@@ -111,7 +123,7 @@ export function DisassemblyForm() {
           });
       }
     };
-  }, [showScanner]);
+  }, [showScanner, cameraPermissionGranted]);
 
   const handleCloseScanner = () => {
     setShowScanner(false);
