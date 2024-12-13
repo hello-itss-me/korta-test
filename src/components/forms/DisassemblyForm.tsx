@@ -1,49 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FormField } from './FormField';
-import { supabase } from '../../lib/supabase';
-import { toast } from 'react-hot-toast';
-import { useProductData } from '../../hooks/useProductData';
-import { QrCode, XCircle } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+    import { FormField } from './FormField';
+    import { supabase } from '../../lib/supabase';
+    import { toast } from 'react-hot-toast';
+    import { useProductData } from '../../hooks/useProductData';
+    import { QrCode, XCircle } from 'lucide-react';
+    import { Html5QrcodeScanner, Html5QrcodeError } from 'html5-qrcode';
 
-export function DisassemblyForm() {
-  const [formData, setFormData] = useState({
-    motorId: '',
-    productName: '',
-    contractor: '',
-    employeeId: '',
-    disassemblyDate: '',
-    disassemblyTime: ''
-  });
-  const [showScanner, setShowScanner] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const qrReaderRef = useRef<HTMLDivElement>(null);
-
-  const { fetchProductData } = useProductData(setFormData);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-
-    if (name === 'motorId' && value) {
-      fetchProductData(value);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { error } = await supabase.from('motor_disassembly').insert([{
-        motor_id: parseInt(formData.motorId),
-        employee_id: formData.employeeId,
-        disassembly_date: formData.disassemblyDate,
-        disassembly_time: formData.disassemblyTime
-      }]);
-
-      if (error) throw error;
-
-      toast.success('Данные успешно сохранены');
-      setFormData({
+    export function DisassemblyForm() {
+      const [formData, setFormData] = useState({
         motorId: '',
         productName: '',
         contractor: '',
@@ -51,155 +15,182 @@ export function DisassemblyForm() {
         disassemblyDate: '',
         disassemblyTime: ''
       });
-    } catch (error) {
-      toast.error('Ошибка при сохранении данных');
-    }
-  };
+      const [showScanner, setShowScanner] = useState(false);
+      const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
-  const handleScan = async () => {
-    try {
-      // Request camera permission before showing the scanner
-      await navigator.mediaDevices.getUserMedia({ video: true });
-      setShowScanner(true);
-    } catch (err) {
-      console.error('Failed to get camera access: ', err);
-      toast.error('Не удалось получить доступ к камере. Пожалуйста, проверьте разрешение на использование камеры в настройках браузера.');
-    }
-  };
+      const { fetchProductData } = useProductData(setFormData);
 
-  const onScanSuccess = (decodedText: string, decodedResult: any) => {
-    try {
-      const url = new URL(decodedText);
-      const searchParams = new URLSearchParams(url.search);
-      const id = searchParams.get('id');
+      const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
 
-      if (id) {
-        setFormData(prev => ({ ...prev, motorId: id }));
-        setShowScanner(false);
-        if (scannerRef.current) {
-          scannerRef.current.stop();
+        if (name === 'motorId' && value) {
+          fetchProductData(value);
         }
-      } else {
-        toast.error('QR код не содержит ID');
-      }
-    } catch (error) {
-      toast.error('Неверный формат QR кода');
-    }
-  };
+      };
 
-  const onScanFailure = (error: any) => {
-    console.warn(`QR code scan failed: ${error}`);
-  };
+      const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+          const { error } = await supabase.from('motor_disassembly').insert([{
+            motor_id: parseInt(formData.motorId),
+            employee_id: formData.employeeId,
+            disassembly_date: formData.disassemblyDate,
+            disassembly_time: formData.disassemblyTime
+          }]);
 
-  useEffect(() => {
-    if (showScanner && qrReaderRef.current) {
-      // Initialize Html5Qrcode only when the modal is shown and the ref is set
-      if (!scannerRef.current) {
-        scannerRef.current = new Html5Qrcode(qrReaderRef.current.id, {
-          formatsToSupport: ["QR_CODE"],
-        });
-      }
-      requestAnimationFrame(() => {
-        if (scannerRef.current) {
-          scannerRef.current
-            .start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, onScanFailure)
-            .catch((err) => {
-              console.warn(`Camera start failed: ${err}`);
-              toast.error('Ошибка при запуске камеры.');
-            });
-        }
-      });
-    }
-
-    return () => {
-      // Cleanup the scanner when the modal is closed or the component unmounts
-      if (scannerRef.current) {
-        scannerRef.current
-          .stop()
-          .then(() => {
-            scannerRef.current = null;
-          })
-          .catch((err) => {
-            console.warn(`Failed to stop scanner: ${err}`);
+          if (error) throw error;
+          
+          toast.success('Данные успешно сохранены');
+          setFormData({
+            motorId: '',
+            productName: '',
+            contractor: '',
+            employeeId: '',
+            disassemblyDate: '',
+            disassemblyTime: ''
           });
-      }
-    };
-  }, [showScanner]);
+        } catch (error) {
+          toast.error('Ошибка при сохранении данных');
+        }
+      };
 
-  const handleCloseScanner = () => {
-    setShowScanner(false);
-  };
+      const handleScan = () => {
+        setShowScanner(true);
+      };
 
-  return (
-    <form className="form" onSubmit={handleSubmit}>
-      <div className="flex items-center space-x-2">
-        <FormField
-          label="ID Электродвигателя"
-          type="text"
-          name="motorId"
-          value={formData.motorId}
-          onChange={handleChange}
-          placeholder="Введите ID электродвигателя"
-        />
-        <button type="button" onClick={handleScan} className="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors">
-          <QrCode size={24} />
-        </button>
-      </div>
-      {showScanner && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div ref={qrReaderRef} id="qr-reader" className="w-full max-w-sm" style={{ backgroundColor: 'white', minHeight: '300px' }}></div>
-          <button
-            type="button"
-            onClick={handleCloseScanner}
-            className="absolute top-2 right-2 p-2 rounded-md bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors"
-          >
-            <XCircle size={24} />
+      const onScanSuccess = (decodedText: string, decodedResult: any) => {
+        try {
+          const url = new URL(decodedText);
+          const searchParams = new URLSearchParams(url.search);
+          const id = searchParams.get('id');
+
+          if (id) {
+            setFormData(prev => ({ ...prev, motorId: id }));
+            setShowScanner(false);
+          } else {
+            toast.error('QR код не содержит ID');
+          }
+        } catch (error) {
+          toast.error('Неверный формат QR кода');
+        }
+      };
+
+      const onScanFailure = (error: Html5QrcodeError) => {
+        // Handle QR code scan failure
+        console.warn(`QR code scan failed: ${error}`);
+      };
+
+      useEffect(() => {
+        if (showScanner) {
+          // Initialize the scanner only when the modal is shown
+          scannerRef.current = new Html5QrcodeScanner(
+            "qr-reader",
+            {
+              fps: 10,
+              qrbox: 250,
+              rememberLastUsedCamera: true,
+            },
+            /* verbose= */ false
+          );
+          scannerRef.current.render(onScanSuccess, onScanFailure);
+          const videoElement = document.querySelector('#qr-reader video');
+          if (videoElement) {
+            videoElement.setAttribute('playsinline', 'true');
+          }
+        } else {
+          // Clear the scanner when the modal is closed
+          if (scannerRef.current) {
+            scannerRef.current.clear();
+            scannerRef.current = null;
+          }
+        }
+
+        // Cleanup function to clear the scanner when the component unmounts
+        return () => {
+          if (scannerRef.current) {
+            scannerRef.current.clear();
+            scannerRef.current = null;
+          }
+        };
+      }, [showScanner]);
+
+      const handleCloseScanner = () => {
+        setShowScanner(false);
+      };
+
+      return (
+        <form className="form" onSubmit={handleSubmit}>
+          <div className="flex items-center space-x-2">
+            <FormField
+              label="ID Электродвигателя"
+              type="text"
+              name="motorId"
+              value={formData.motorId}
+              onChange={handleChange}
+              placeholder="Введите ID электродвигателя"
+            />
+            <button type="button" onClick={handleScan} className="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors">
+              <QrCode size={24} />
+            </button>
+          </div>
+          {showScanner && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+              <div className="scanner-container bg-white p-4 rounded-lg relative">
+                <div id="qr-reader" className="w-full" style={{ minWidth: '300px', minHeight: '300px' }}></div>
+                <button
+                  type="button"
+                  onClick={handleCloseScanner}
+                  className="absolute top-2 right-2 p-2 rounded-md bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors"
+                >
+                  <XCircle size={24} />
+                </button>
+              </div>
+            </div>
+          )}
+          <FormField
+            label="Название товара"
+            type="text"
+            name="productName"
+            value={formData.productName}
+            onChange={handleChange}
+            placeholder="Введите ID Электродвигателя в строке выше"
+            disabled
+          />
+          <FormField
+            label="Контрагент"
+            type="text"
+            name="contractor"
+            value={formData.contractor}
+            onChange={handleChange}
+            placeholder="Заполнится при вводе ID электродвигателя"
+            disabled
+          />
+          <FormField
+            label="ID Сотрудника"
+            type="text"
+            name="employeeId"
+            value={formData.employeeId}
+            onChange={handleChange}
+            placeholder="Введите ID сотрудника"
+          />
+          <FormField
+            label="Дата Разборки"
+            type="date"
+            name="disassemblyDate"
+            value={formData.disassemblyDate}
+            onChange={handleChange}
+          />
+          <FormField
+            label="Время Разборки"
+            type="time"
+            name="disassemblyTime"
+            value={formData.disassemblyTime}
+            onChange={handleChange}
+          />
+          <button type="submit" className="submit-button">
+            Отправить
           </button>
-        </div>
-      )}
-      <FormField
-        label="Название товара"
-        type="text"
-        name="productName"
-        value={formData.productName}
-        onChange={handleChange}
-        placeholder="Введите ID Электродвигателя в строке выше"
-        disabled
-      />
-      <FormField
-        label="Контрагент"
-        type="text"
-        name="contractor"
-        value={formData.contractor}
-        onChange={handleChange}
-        placeholder="Заполнится при вводе ID электродвигателя"
-        disabled
-      />
-      <FormField
-        label="ID Сотрудника"
-        type="text"
-        name="employeeId"
-        value={formData.employeeId}
-        onChange={handleChange}
-        placeholder="Введите ID сотрудника"
-      />
-      <FormField
-        label="Дата Разборки"
-        type="date"
-        name="disassemblyDate"
-        value={formData.disassemblyDate}
-        onChange={handleChange}
-      />
-      <FormField
-        label="Время Разборки"
-        type="time"
-        name="disassemblyTime"
-        value={formData.disassemblyTime}
-        onChange={handleChange}
-      />
-      <button type="submit" className="submit-button">
-        Отправить
-      </button>
-    </form>
-  );
-}
+        </form>
+      );
+    }
