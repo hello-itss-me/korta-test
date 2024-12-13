@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  /* Mobile-first styles */
+  @layer base {
+    html {
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Roboto', sans-serif; /* Use a more readable font */
+    }
+
+    input, select {
+      @apply w-full px-4 py-3 text-base border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500;
+      min-height: 48px; /* Better touch targets */
+      border-color: #d1d5db; /* Slightly darker border */
+    }
+
+    button {
+      @apply min-h-[48px]; /* Better touch targets */
+    }
+  }
+
+  @layer components {
+    .container {
+      @apply w-full min-h-screen bg-gray-100 px-4 py-6;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        @apply px-8 py-10;
+      }
+    }
+
+    .card {
+      @apply w-full bg-white rounded-xl shadow-lg p-6;
+    }
+
+    @media (min-width: 768px) {
+      .card {
+        @apply p-8;
+      }
+    }
+
+    .form {
+      @apply space-y-6;
+    }
+
+    .input-group {
+      @apply space-y-2;
+    }
+
+    .label {
+      @apply block text-sm font-medium text-gray-700;
+    }
+
+    .submit-button {
+      @apply w-full bg-blue-600 text-white font-medium py-3 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors;
+      box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    }
+
+    .nav {
+      @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4;
+    }
+
+    .nav-list {
+      @apply flex justify-around items-center;
+    }
+
+    .nav-item {
+      @apply flex flex-col items-center text-xs text-gray-600 hover:text-blue-600;
+    }
+
+    .nav-icon {
+      @apply mb-1 w-6 h-6;
+    }
+
+    .nav-item.active {
+      @apply text-blue-600;
+    }
+
+    @media (max-width: 767px) {
+      .nav-item {
+        @apply flex-col;
+      }
+
+      .nav-icon {
+        @apply w-5 h-5; /* Reduced icon size for mobile */
+      }
+
+      .nav-label {
+        display: none; /* Hide labels on mobile */
+      }
+    }
+
+    @media (min-width: 768px) {
+      .nav {
+        @apply top-0 bottom-0 w-64 bg-white border-r border-gray-200;
+      }
+
+      .nav-list {
+        @apply flex-col items-start;
+      }
+
+      .nav-item {
+        @apply relative flex-row items-center mb-3 py-2 px-3 rounded-md w-full;
+        transition: 
+          background-color 0.2s ease-in-out,
+          box-shadow 0.2s ease-in-out;
+        height: 40px;
+      }
+
+      .nav-item:hover::before {
+        content: '';
+        @apply absolute top-0 bottom-0 left-0 rounded-md;
+        width: 150%;
+        background-color: rgba(0, 0, 0, 0.05);
+        z-index: -1;
+      }
+
+      .nav-icon {
+        @apply mr-3 mb-0 w-7 h-7;
+      }
+
+      .nav-item.active {
+        @apply text-blue-600 relative;
+      }
+      .nav-item.active::before {
+        content: '';
+        @apply absolute top-0 bottom-0 left-0 rounded-md;
+        width: 150%;
+        background-color: rgba(59, 130, 246, 0.2);
+        z-index: -1;
+      }
+
+      .content-area {
+        @apply ml-64;
+      }
+      .nav-logo {
+        @apply ml-[-10px];
+      }
+    }
+  }

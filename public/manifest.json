@@ -1,0 +1,16 @@
+{
+  "name": "КОРТА",
+  "short_name": "КОРТА",
+  "description": "A Vite React Progressive Web App",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://korta46.ru/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
