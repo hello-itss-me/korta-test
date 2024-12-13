@@ -141,17 +141,4 @@
         @apply ml-[-10px];
       }
     }
-    .scanner-container {
-      position: relative;
-      width: 100%;
-      max-width: 500px; /* Adjust as needed */
-    }
-
-    @media (max-width: 767px) {
-      .scanner-container {
-        width: 100vw;
-        height: 100vh;
-        max-width: unset;
-      }
-    }
   }
