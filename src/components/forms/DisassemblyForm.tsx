@@ -99,12 +99,16 @@ export function DisassemblyForm() {
           formatsToSupport: ["QR_CODE"],
         });
       }
-      scannerRef.current
-        .start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, onScanFailure)
-        .catch((err) => {
-          console.warn(`Camera start failed: ${err}`);
-          toast.error('Ошибка при запуске камеры.');
-        });
+      requestAnimationFrame(() => {
+        if (scannerRef.current) {
+          scannerRef.current
+            .start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, onScanFailure)
+            .catch((err) => {
+              console.warn(`Camera start failed: ${err}`);
+              toast.error('Ошибка при запуске камеры.');
+            });
+        }
+      });
     }
 
     return () => {
@@ -143,7 +147,7 @@ export function DisassemblyForm() {
       </div>
       {showScanner && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div ref={qrReaderRef} id="qr-reader" className="w-full max-w-sm" style={{ backgroundColor: 'white' }}></div>
+          <div ref={qrReaderRef} id="qr-reader" className="w-full max-w-sm" style={{ backgroundColor: 'white', minHeight: '300px' }}></div>
           <button
             type="button"
             onClick={handleCloseScanner}
