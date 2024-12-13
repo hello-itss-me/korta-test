@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { useProductData } from '../../hooks/useProductData';
 import { QrCode, XCircle } from 'lucide-react';
-import { Html5QrcodeScanner, Html5QrcodeError } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export function DisassemblyForm() {
   const [formData, setFormData] = useState({
@@ -16,7 +16,8 @@ export function DisassemblyForm() {
     disassemblyTime: ''
   });
   const [showScanner, setShowScanner] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const qrReaderRef = useRef<HTMLDivElement>(null);
 
   const { fetchProductData } = useProductData(setFormData);
 
@@ -59,7 +60,7 @@ export function DisassemblyForm() {
     setShowScanner(true);
   };
 
-  const onScanSuccess = (decodedText: string, decodedResult: any) => {
+  const onScanSuccess = (decodedText: string) => {
     try {
       const url = new URL(decodedText);
       const searchParams = new URLSearchParams(url.search);
@@ -67,7 +68,7 @@ export function DisassemblyForm() {
 
       if (id) {
         setFormData(prev => ({ ...prev, motorId: id }));
-        setShowScanner(false);
+        setShowScanner(false); // Close the modal
       } else {
         toast.error('QR код не содержит ID');
       }
@@ -76,37 +77,35 @@ export function DisassemblyForm() {
     }
   };
 
-  const onScanFailure = (error: Html5QrcodeError) => {
-    // Handle QR code scan failure
+  const onScanFailure = (error: any) => {
     console.warn(`QR code scan failed: ${error}`);
   };
 
   useEffect(() => {
-    if (showScanner) {
-      // Initialize the scanner only when the modal is shown
-      scannerRef.current = new Html5QrcodeScanner(
-        "qr-reader",
-        {
-          fps: 10,
-          qrbox: 250,
-          rememberLastUsedCamera: true,
-        },
-        /* verbose= */ false
-      );
-      scannerRef.current.render(onScanSuccess, onScanFailure);
-    } else {
-      // Clear the scanner when the modal is closed
-      if (scannerRef.current) {
-        scannerRef.current.clear();
-        scannerRef.current = null;
-      }
+    if (showScanner && qrReaderRef.current) {
+      // Initialize Html5Qrcode only when the modal is shown and the ref is set
+      scannerRef.current = new Html5Qrcode(qrReaderRef.current.id, {
+        formatsToSupport: [ "QR_CODE" ],
+      });
+      scannerRef.current
+        .start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanFailure)
+        .catch((err) => {
+          console.warn(`Camera start failed: ${err}`);
+          toast.error('Ошибка при запуске камеры');
+        });
     }
 
-    // Cleanup function to clear the scanner when the component unmounts
     return () => {
+      // Cleanup the scanner when the modal is closed or the component unmounts
       if (scannerRef.current) {
-        scannerRef.current.clear();
-        scannerRef.current = null;
+        scannerRef.current
+          .stop()
+          .then(() => {
+            scannerRef.current = null;
+          })
+          .catch((err) => {
+            console.warn(`Failed to stop scanner: ${err}`);
+          });
       }
     };
   }, [showScanner]);
@@ -132,16 +131,14 @@ export function DisassemblyForm() {
       </div>
       {showScanner && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="scanner-container bg-white p-4 rounded-lg relative">
-            <div id="qr-reader" className="w-full" style={{ minWidth: '300px', minHeight: '300px' }}></div>
-            <button
-              type="button"
-              onClick={handleCloseScanner}
-              className="absolute top-2 right-2 p-2 rounded-md bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors"
-            >
-              <XCircle size={24} />
-            </button>
-          </div>
+          <div ref={qrReaderRef} id="qr-reader" className="w-full max-w-sm" style={{ backgroundColor: 'white' }}></div>
+          <button
+            type="button"
+            onClick={handleCloseScanner}
+            className="absolute top-2 right-2 p-2 rounded-md bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors"
+          >
+            <XCircle size={24} />
+          </button>
         </div>
       )}
       <FormField
