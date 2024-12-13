@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
     import { FormField } from './FormField';
     import { supabase } from '../../lib/supabase';
     import { toast } from 'react-hot-toast';
     import { useProductData } from '../../hooks/useProductData';
-    import { Html5QrcodeScanner } from 'html5-qrcode';
+    import { Html5QrcodeScanner, Html5QrcodeError } from 'html5-qrcode';
     import { QrCode } from 'lucide-react';
 
     export function DisassemblyForm() {
@@ -16,6 +16,7 @@ import React, { useState, useRef } from 'react';
         disassemblyTime: ''
       });
       const [scanning, setScanning] = useState(false);
+      const [scannerError, setScannerError] = useState<string | null>(null);
       const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
       const { fetchProductData } = useProductData(setFormData);
@@ -57,10 +58,11 @@ import React, { useState, useRef } from 'react';
 
       const startScanning = () => {
         setScanning(true);
+        setScannerError(null);
         scannerRef.current = new Html5QrcodeScanner(
           "qr-reader",
           { fps: 10, qrbox: 250 },
-          /* verbose= */ false
+          /* verbose= */ true
         );
         scannerRef.current.render(onScanSuccess, onScanError);
       };
@@ -71,11 +73,27 @@ import React, { useState, useRef } from 'react';
           scannerRef.current.clear();
         }
         setScanning(false);
+        setScannerError(null);
       };
 
-      const onScanError = (errorMessage: string) => {
-        console.warn(errorMessage);
+      const onScanError = (error: string | Html5QrcodeError) => {
+        if (typeof error === 'string') {
+          setScannerError(error);
+        } else {
+          setScannerError(error.message);
+        }
       };
+
+      useEffect(() => {
+        return () => {
+          // Cleanup the scanner when the component unmounts
+          if (scannerRef.current) {
+            scannerRef.current.clear().catch(error => {
+              console.error("Failed to clear html5-qrcode. Reason: ", error);
+            });
+          }
+        };
+      }, []);
 
       return (
         <form className="form" onSubmit={handleSubmit}>
@@ -93,6 +111,7 @@ import React, { useState, useRef } from 'react';
             </button>
           </div>
           {scanning && <div id="qr-reader" className="w-full h-64"></div>}
+          {scannerError && <div className="text-red-500">{scannerError}</div>}
           <FormField
             label="Название товара"
             type="text"
