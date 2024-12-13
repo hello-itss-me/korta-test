@@ -1,0 +1,13 @@
+{
+  "name": "Camera Test PWA",
+  "short_name": "CameraTest",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff",
+  "theme_color": "#fff",
+  "description": "A simple PWA to test camera access.",
+  "icons": [],
+  "permissions": [
+    "camera"
+  ]
+}
