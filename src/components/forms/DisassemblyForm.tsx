@@ -68,7 +68,10 @@ export function DisassemblyForm() {
 
       if (id) {
         setFormData(prev => ({ ...prev, motorId: id }));
-        setShowScanner(false); // Close the modal
+        setShowScanner(false);
+        if (scannerRef.current) {
+          scannerRef.current.stop();
+        }
       } else {
         toast.error('QR код не содержит ID');
       }
@@ -82,10 +85,10 @@ export function DisassemblyForm() {
   };
 
   useEffect(() => {
-    if (showScanner && qrReaderRef.current) {
-      // Initialize Html5Qrcode only when the modal is shown and the ref is set
+    if (showScanner && qrReaderRef.current && !scannerRef.current) {
+      // Initialize Html5Qrcode only when the modal is shown, the ref is set, and the scanner is not already initialized
       scannerRef.current = new Html5Qrcode(qrReaderRef.current.id, {
-        formatsToSupport: [ "QR_CODE" ],
+        formatsToSupport: ["QR_CODE"],
       });
       scannerRef.current
         .start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanFailure)
