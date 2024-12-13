@@ -82,9 +82,14 @@ export function DisassemblyForm() {
 
   useEffect(() => {
     if (showScanner) {
+      // Initialize the scanner only when the modal is shown
       scannerRef.current = new Html5Qrcode("qr-reader");
       scannerRef.current
         .start({ facingMode: "environment" }, {}, onScanSuccess, onScanFailure)
+        .then(() => {
+          // Force a re-render after starting the scanner
+          setFormData({ ...formData });
+        })
         .catch((err) => {
           console.error("Camera start failed:", err);
           toast.error("Failed to start camera. Please check permissions.");
