@@ -4,7 +4,9 @@ import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { useProductData } from '../../hooks/useProductData';
 import { QrCode, XCircle } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { BrowserQRCodeReader } from '@zxing/browser';
+
+const codeReader = new BrowserQRCodeReader();
 
 export function DisassemblyForm() {
   const [formData, setFormData] = useState({
@@ -16,13 +18,12 @@ export function DisassemblyForm() {
     disassemblyTime: ''
   });
   const [showScanner, setShowScanner] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-
+  const [scanning, setScanning] = useState(false);
   const { fetchProductData } = useProductData(setFormData);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(function (prev) { return { ...prev, [name]: value }; });
 
     if (name === 'motorId' && value) {
       fetchProductData(value);
@@ -40,7 +41,7 @@ export function DisassemblyForm() {
       }]);
 
       if (error) throw error;
-      
+
       toast.success('Данные успешно сохранены');
       setFormData({
         motorId: '',
@@ -57,58 +58,83 @@ export function DisassemblyForm() {
 
   const handleScan = () => {
     setShowScanner(true);
+    setScanning(true);
   };
 
-  const onScanSuccess = (decodedText: string, decodedResult: any) => {
-    try {
-      const url = new URL(decodedText);
-      const searchParams = new URLSearchParams(url.search);
-      const id = searchParams.get('id');
+  const onScanSuccess = (result: any) => {
+    if (result) {
+      try {
+        const url = new URL(result.text);
+        const searchParams = new URLSearchParams(url.search);
+        const id = searchParams.get('id');
 
-      if (id) {
-        setFormData(prev => ({ ...prev, motorId: id }));
+        if (id) {
+          setFormData(function (prev) { return { ...prev, motorId: id }; });
+          toast.success('QR код успешно отсканирован');
+        } else {
+          toast.error('QR код не содержит ID');
+        }
+      } catch (error) {
+        toast.error('Неверный формат QR кода');
+      } finally {
         setShowScanner(false);
-      } else {
-        toast.error('QR код не содержит ID');
+        setScanning(false);
+        codeReader.reset();
       }
-    } catch (error) {
-      toast.error('Неверный формат QR кода');
     }
   };
 
   const onScanFailure = (error: any) => {
-    console.warn('QR code scan failed:', error);
+    console.error('QR code scan failed:', error);
+    toast.error('Ошибка при сканировании QR кода');
   };
-
-  useEffect(() => {
-    if (showScanner) {
-      // Initialize the scanner only when the modal is shown
-      scannerRef.current = new Html5Qrcode("qr-reader");
-      scannerRef.current
-        .start({ facingMode: "environment" }, {}, onScanSuccess, onScanFailure)
-        .then(() => {
-          // Force a re-render after starting the scanner
-          setFormData({ ...formData });
-        })
-        .catch((err) => {
-          console.error("Camera start failed:", err);
-          toast.error("Failed to start camera. Please check permissions.");
-          setShowScanner(false);
-        });
-    }
-
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().then(() => {
-          scannerRef.current = null;
-        });
-      }
-    };
-  }, [showScanner]);
 
   const handleCloseScanner = () => {
     setShowScanner(false);
+    setScanning(false);
+    codeReader.reset();
   };
+
+  useEffect(() => {
+    let selectedDeviceId: string | undefined;
+  
+    if (showScanner) {
+      // Get a list of available cameras
+      codeReader.listVideoInputDevices()
+        .then((videoInputDevices) => {
+          // Try to find a rear-facing camera
+          const rearCamera = videoInputDevices.find(device => device.label.toLowerCase().includes('back'));
+          selectedDeviceId = rearCamera ? rearCamera.deviceId : videoInputDevices[0]?.deviceId;
+  
+          // Start scanning with the selected camera
+          if (selectedDeviceId) {
+            codeReader.decodeFromVideoDevice(selectedDeviceId, 'qr-reader', (result, error, controls) => {
+              if (result) {
+                onScanSuccess(result);
+              }
+              if (error) {
+                // Only log the error if it's not a NotFoundException
+                if (error.name !== 'NotFoundException') {
+                  onScanFailure(error);
+                }
+              }
+            });
+          } else {
+            toast.error('Не найдено ни одной камеры');
+            setShowScanner(false);
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error('Не удалось получить список камер');
+          setShowScanner(false);
+        });
+    }
+  
+    return () => {
+      codeReader.reset();
+    };
+  }, [showScanner]);
 
   return (
     <form className="form" onSubmit={handleSubmit}>
