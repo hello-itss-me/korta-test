@@ -56,8 +56,15 @@ export function DisassemblyForm() {
     }
   };
 
-  const handleScan = () => {
-    setShowScanner(true);
+  const handleScan = async () => {
+    try {
+      // Request camera permission before showing the scanner
+      await navigator.mediaDevices.getUserMedia({ video: true });
+      setShowScanner(true);
+    } catch (err) {
+      console.error('Failed to get camera access: ', err);
+      toast.error('Не удалось получить доступ к камере. Пожалуйста, проверьте разрешение на использование камеры в настройках браузера.');
+    }
   };
 
   const onScanSuccess = (decodedText: string, decodedResult: any) => {
@@ -65,7 +72,7 @@ export function DisassemblyForm() {
       const url = new URL(decodedText);
       const searchParams = new URLSearchParams(url.search);
       const id = searchParams.get('id');
-  
+
       if (id) {
         setFormData(prev => ({ ...prev, motorId: id }));
         setShowScanner(false);
@@ -96,7 +103,7 @@ export function DisassemblyForm() {
         .start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, onScanFailure)
         .catch((err) => {
           console.warn(`Camera start failed: ${err}`);
-          toast.error('Ошибка при запуске камеры. Пожалуйста, проверьте разрешение на использование камеры в настройках браузера.');
+          toast.error('Ошибка при запуске камеры.');
         });
     }
 
