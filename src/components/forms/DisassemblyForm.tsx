@@ -85,8 +85,16 @@ export function DisassemblyForm() {
 
     if (showScanner) {
       qrCodeScanner = new Html5Qrcode("qr-reader");
+
+      // Specify video constraints for rear camera
+      const constraints = {
+        video: {
+          facingMode: { ideal: "environment" }
+        }
+      };
+
       qrCodeScanner.start(
-        { facingMode: "environment" },
+        constraints,
         {},
         onScanSuccess,
         onScanFailure
