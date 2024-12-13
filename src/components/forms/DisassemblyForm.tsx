@@ -69,8 +69,21 @@ import React, { useState, useRef } from 'react';
         }, 500);
       };
 
-      const onScanSuccess = (decodedText: string) => {
-        setFormData(prev => ({ ...prev, motorId: decodedText }));
+      const onScanSuccess = (decodedText: string, decodedResult: any) => {
+        try {
+          const url = new URL(decodedText);
+          const searchParams = new URLSearchParams(url.search);
+          const id = searchParams.get('id');
+
+          if (id) {
+            setFormData(prev => ({ ...prev, motorId: id }));
+          } else {
+            toast.error('QR код не содержит ID');
+          }
+        } catch (error) {
+          toast.error('Неверный формат QR кода');
+        }
+
         setShowScanner(false);
         if (scannerRef.current) {
           scannerRef.current.clear();
