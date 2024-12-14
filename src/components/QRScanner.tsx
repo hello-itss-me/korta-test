@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import React, { useState, useRef, LegacyRef } from 'react';
+import { QrReader } from 'react-qr-reader';
 import { toast } from 'react-hot-toast';
 
 interface QRScannerProps {
@@ -9,46 +9,29 @@ interface QRScannerProps {
 }
 
 export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const readerDivRef = useRef<HTMLDivElement>(null);
+  const qrReaderRef = useRef<QrReader>(null);
 
-  useEffect(() => {
-    if (isScannerOpen && readerDivRef.current) {
-      const scanner = new Html5QrcodeScanner(
-        readerDivRef.current,
-        {
-          qrbox: 250,
-          fps: 5,
-        },
-        false
-      );
-
-      scanner.render(onScanSuccess, onScanError);
-      scannerRef.current = scanner;
-    } else if (scannerRef.current) {
-      scannerRef.current.clear();
-      scannerRef.current = null;
+  const handleScan = (data: string | null) => {
+    if (data) {
+      onResult(data);
+      onClose();
     }
-
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear();
-      }
-    };
-  }, [isScannerOpen]);
-
-
-  const onScanSuccess = (decodedText: string) => {
-    onResult(decodedText);
-    onClose();
   };
 
-  const onScanError = (errorMessage: string) => {
-    console.warn(errorMessage);
+  const handleError = (err: any) => {
+    console.error(err);
     toast.error('Ошибка сканирования QR-кода');
   };
 
   return (
-    <div ref={readerDivRef} style={{ display: isScannerOpen ? 'block' : 'none' }} />
+    <div style={{ display: isScannerOpen ? 'block' : 'none' }}>
+      <QrReader
+        ref={qrReaderRef as LegacyRef<QrReader>}
+        delay={300}
+        onError={handleError}
+        onScan={handleScan}
+        style={{ width: '100%' }}
+      />
+    </div>
   );
 }
