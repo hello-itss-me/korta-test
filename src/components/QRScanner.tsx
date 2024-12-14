@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
 
@@ -11,7 +11,6 @@ interface QRScannerProps {
 export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     const requestCameraPermission = async () => {
@@ -31,15 +30,11 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
 
     const startScanner = async () => {
       const stream = await requestCameraPermission();
-      if (!stream) return;
-
-      setStream(stream);
+      if (!stream || !videoRef.current) return;
 
       const config = { fps: 5, qrbox: 250 };
-      const html5QrCode = new Html5Qrcode('qr-reader', { formatsToSupport: [0] });
+      const html5QrCode = new Html5Qrcode(videoRef.current, { formatsToSupport: [0] }, false);
       scannerRef.current = html5QrCode;
-
-      console.log('Html5Qrcode instance created:', html5QrCode);
 
       setTimeout(async () => {
         try {
@@ -78,10 +73,6 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
             console.error('Failed to stop scanner:', error);
           });
       }
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        setStream(null);
-      }
     };
 
     if (isScannerOpen) {
@@ -97,7 +88,6 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
 
   return (
     <div style={{ width: '300px', height: '300px', position: 'relative', overflow: 'hidden' }}>
-      <div id="qr-reader" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }} />
       <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </div>
   );
