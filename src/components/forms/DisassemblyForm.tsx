@@ -4,6 +4,7 @@ import React, { useState } from 'react';
     import { toast } from 'react-hot-toast';
     import { useProductData } from '../../hooks/useProductData';
     import { QRScanner } from '../QRScanner';
+    import { Html5Qrcode } from 'html5-qrcode';
 
     export function DisassemblyForm() {
       const [formData, setFormData] = useState({
@@ -26,15 +27,22 @@ import React, { useState } from 'react';
         }
       };
 
-      const handleScanResult = (result: string) => {
-        const url = new URL(result);
-        const id = url.searchParams.get('id');
-        if (id) {
-          setFormData(prev => ({ ...prev, motorId: id }));
-          fetchProductData(id);
-        } else {
-          toast.error('Не удалось извлечь ID из QR-кода');
-        }
+      const handleScanResult = (imageData: string) => {
+        Html5Qrcode.scanFile(imageData, true)
+          .then((decodedText: string) => {
+            const url = new URL(decodedText);
+            const id = url.searchParams.get('id');
+            if (id) {
+              setFormData(prev => ({ ...prev, motorId: id }));
+              fetchProductData(id);
+            } else {
+              toast.error('Не удалось извлечь ID из QR-кода');
+            }
+          })
+          .catch((error: any) => {
+            console.error('Failed to scan QR code:', error);
+            toast.error('Ошибка при сканировании QR-кода');
+          });
       };
 
       const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +84,7 @@ import React, { useState } from 'react';
                 placeholder="Введите ID электродвигателя"
                 className="flex-grow mr-2 border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <QRScanner onResult={handleScanResult} />
+              <QRScanner onImageSelected={handleScanResult} />
             </div>
           </div>
           <FormField
