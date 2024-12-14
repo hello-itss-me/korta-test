@@ -17,22 +17,23 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
     const requestCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        setStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.play();
         }
-        return true;
+        return stream;
       } catch (error) {
         console.error('Error requesting camera permission:', error);
         toast.error('Ошибка при запросе доступа к камере');
-        return false;
+        return null;
       }
     };
 
     const startScanner = async () => {
-      const hasPermission = await requestCameraPermission();
-      if (!hasPermission) return;
+      const stream = await requestCameraPermission();
+      if (!stream) return;
+
+      setStream(stream);
 
       const config = { fps: 5, qrbox: 250 };
       const html5QrCode = new Html5Qrcode('qr-reader', { formatsToSupport: [0] });
@@ -45,8 +46,6 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
             config,
             (decodedText: string) => {
               onResult(decodedText);
-              stopScanner();
-              onClose();
             },
             undefined
           );
@@ -63,6 +62,12 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
           .stop()
           .then(() => {
             console.log('QR Scanner stopped.');
+            if (videoRef.current && videoRef.current.srcObject) {
+              const stream = videoRef.current.srcObject as MediaStream;
+              const tracks = stream.getTracks();
+              tracks.forEach(track => track.stop());
+              videoRef.current.srcObject = null;
+            }
           })
           .catch((error) => {
             console.error('Failed to stop scanner:', error);
@@ -86,9 +91,9 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
   }, [onResult, isScannerOpen, onClose]);
 
   return (
-    <div>
-      <div id="qr-reader" style={{ width: '100%', display: isScannerOpen ? 'block' : 'none' }} />
-      <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: isScannerOpen ? 'block' : 'none' }} />
+    <div style={{ display: isScannerOpen ? 'block' : 'none', position: 'relative', width: '100%' }}>
+      <div id="qr-reader" style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: -1 }} />
+      <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </div>
   );
 }

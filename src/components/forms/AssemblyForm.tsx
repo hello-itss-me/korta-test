@@ -102,24 +102,32 @@ import React, { useState } from 'react';
         <form className="form" onSubmit={handleSubmit}>
           <div className="input-group">
             <label className="label">ID Электродвигателя</label>
-            <div className="flex">
+            <div className="flex items-center">
               <input
                 type="text"
                 name="motorId"
                 value={formData.motorId}
                 onChange={handleChange}
                 placeholder="Введите ID электродвигателя"
-                className="flex-grow mr-2"
+                className="flex-grow mr-2 border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 type="button"
                 onClick={() => setIsScannerOpen(!isScannerOpen)}
-                className="submit-button"
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
               >
-                {isScannerOpen ? 'Закрыть QR' : 'Сканировать QR'}
+                {isScannerOpen ? 'Закрыть' : 'QR'}
               </button>
             </div>
-            {isScannerOpen && <QRScanner onResult={handleScanResult} isScannerOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} />}
+            {isScannerOpen && (
+              <div className="mt-2">
+                <QRScanner
+                  onResult={handleScanResult}
+                  isScannerOpen={isScannerOpen}
+                  onClose={() => setIsScannerOpen(false)}
+                />
+              </div>
+            )}
           </div>
           <FormField
             label="Название товара"
