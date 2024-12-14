@@ -86,11 +86,14 @@
       }
 
       .nav-icon {
-        @apply w-5 h-5; /* Reduced icon size for mobile */
+        @apply w-8 h-8; /* Increased icon size for mobile */
       }
 
       .nav-label {
         display: none; /* Hide labels on mobile */
+      }
+      .form input[type="date"], .form input[type="time"] {
+        @apply ml-4;
       }
     }
 
