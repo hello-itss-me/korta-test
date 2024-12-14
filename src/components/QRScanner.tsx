@@ -12,6 +12,22 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
+    const checkCameraPermissions = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCamera = devices.some(device => device.kind === 'videoinput');
+        if (!hasCamera) {
+          toast.error('Камера не обнаружена');
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error('Error checking camera permissions:', error);
+        toast.error('Ошибка при проверке разрешений камеры');
+        return false;
+      }
+    };
+
     const requestCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -25,6 +41,9 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
     };
 
     const startScanner = async () => {
+      const hasCamera = await checkCameraPermissions();
+      if (!hasCamera) return;
+
       const hasPermission = await requestCameraPermission();
       if (!hasPermission) return;
 
@@ -38,6 +57,8 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
           config,
           (decodedText: string) => {
             onResult(decodedText);
+            stopScanner();
+            onClose();
           },
           undefined
         );
