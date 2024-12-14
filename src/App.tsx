@@ -9,7 +9,6 @@ import React from 'react';
     import { OtherPage } from './pages/OtherPage';
     import { ProfilePage } from './pages/ProfilePage';
     import { Toaster } from 'react-hot-toast';
-    import { CameraTest } from './components/CameraTest';
 
     function App() {
       return (
@@ -18,7 +17,15 @@ import React from 'react';
           <div className="flex">
             <Navigation />
             <div className="content-area flex-grow">
-            <CameraTest />
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/assembly" element={<AssemblyPage />} />
+                <Route path="/disassembly" element={<DisassemblyPage />} />
+                <Route path="/winding" element={<WindingPage />} />
+                <Route path="/turning" element={<TurningPage />} />
+                <Route path="/other" element={<OtherPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Routes>
             </div>
           </div>
         </Router>
