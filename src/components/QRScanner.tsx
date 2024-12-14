@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import QrScanner from 'qr-scanner';
 
 interface QRScannerProps {
@@ -7,74 +7,89 @@ interface QRScannerProps {
   onClose: () => void;
 }
 
-export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
-  const [scanning, setScanning] = useState(false);
+const QRScanner = ({ onResult, isScannerOpen, onClose }: QRScannerProps) => {
+  const [result, setResult] = useState(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
 
   useEffect(() => {
+    // Инициализация сканера
     if (isScannerOpen && videoRef.current) {
       scannerRef.current = new QrScanner(
         videoRef.current,
-        result => {
+        (result) => {
+          setResult(result.data);
           onResult(result.data);
-          stopScanning();
           onClose();
         },
         {
-          preferredCamera: 'environment',
+          // Специфичные настройки для iOS
+          preferredCamera: 'environment', // Задняя камера
           maxScansPerSecond: 5,
           highlightScanRegion: true,
           returnDetailedScanResult: true,
+          
+          // Обработка ошибок
           onDecodeError: (error) => {
             console.log('Ошибка декодирования:', error);
           }
         }
       );
-      startScanning();
     }
 
     return () => {
-      stopScanning();
+      // Очистка при размонтировании
+      if (scannerRef.current) {
+        scannerRef.current.stop();
+        scannerRef.current.destroy();
+      }
     };
   }, [isScannerOpen, onResult, onClose]);
 
-  const startScanning = async () => {
-    try {
-      if (scannerRef.current) {
-        await scannerRef.current.start();
-        setScanning(true);
+  useEffect(() => {
+    const startScanning = async () => {
+      try {
+        if (scannerRef.current) {
+          await scannerRef.current.start();
+        }
+      } catch (error) {
+        console.error('Ошибка запуска сканера:', error);
+        
+        // Расширенная диагностика
+        if (error.name === 'NotAllowedError') {
+          alert('Пожалуйста, разрешите доступ к камере');
+        }
       }
-    } catch (error) {
-      console.error('Ошибка запуска сканера:', error);
-      if ((error as Error).name === 'NotAllowedError') {
-        alert('Пожалуйста, разрешите доступ к камере');
-      }
-    }
-  };
+    };
 
-  const stopScanning = () => {
-    if (scannerRef.current) {
-      scannerRef.current.stop();
-      scannerRef.current.destroy();
-      scannerRef.current = null;
-      setScanning(false);
+    if (isScannerOpen) {
+      startScanning();
     }
-  };
+  }, [isScannerOpen]);
 
   return (
-    <div className="qr-scanner-container" style={{ display: isScannerOpen ? 'block' : 'none' }}>
-      <video
-        ref={videoRef}
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          display: scanning ? 'block' : 'none'
+    <div className="qr-scanner-container">
+      {/* Видео-элемент для сканирования */}
+      <video 
+        ref={videoRef} 
+        style={{ 
+          width: '100%', 
+          maxWidth: '400px', 
+          display: isScannerOpen ? 'block' : 'none' 
         }}
-        playsInline
-        autoPlay
-        muted
       />
+
+      {/* Результат сканирования */}
+      {result && (
+        <div className="scan-result">
+          <p>Результат: {result}</p>
+          <button onClick={() => setResult(null)}>
+            Сканировать снова
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+
+export default QRScanner;
