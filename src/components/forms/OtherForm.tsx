@@ -112,20 +112,7 @@ import React, { useState } from 'react';
             onChange={handleChange}
             placeholder="Введите описание работы"
           />
-          <button type="submit" className="submit-button" style={{
-            boxShadow: '0px 2px 4px 0px rgba(0, 0, 0, 0.25)',
-            width: '100%',
-            height: '48px',
-            borderRadius: '0.5rem',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            fontWeight: '600',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            border: 'none',
-            cursor: 'pointer',
-          }}>
+          <button type="submit" className="submit-button">
             Отправить
           </button>
         </form>

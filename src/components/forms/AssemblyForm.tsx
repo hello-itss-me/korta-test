@@ -2,6 +2,7 @@ import React, { useState } from 'react';
     import { FormField } from './FormField';
     import { supabase } from '../../lib/supabase';
     import { toast } from 'react-hot-toast';
+    import { QRScanner } from '../QRScanner';
 
     export function AssemblyForm() {
       const [formData, setFormData] = useState({
@@ -16,6 +17,8 @@ import React, { useState } from 'react';
         sealId: ''
       });
 
+      const [isScannerOpen, setIsScannerOpen] = useState(false);
+
       const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -24,6 +27,18 @@ import React, { useState } from 'react';
         if (name === 'motorId' && value) {
           fetchProductData(value);
         }
+      };
+
+      const handleScanResult = (result: string) => {
+        const url = new URL(result);
+        const id = url.searchParams.get('id');
+        if (id) {
+          setFormData(prev => ({ ...prev, motorId: id }));
+          fetchProductData(id);
+        } else {
+          toast.error('Не удалось извлечь ID из QR-кода');
+        }
+        setIsScannerOpen(false);
       };
 
       const fetchProductData = async (motorId: string) => {
@@ -85,14 +100,27 @@ import React, { useState } from 'react';
 
       return (
         <form className="form" onSubmit={handleSubmit}>
-          <FormField
-            label="ID Электродвигателя"
-            type="text"
-            name="motorId"
-            value={formData.motorId}
-            onChange={handleChange}
-            placeholder="Введите ID электродвигателя"
-          />
+          <div className="input-group">
+            <label className="label">ID Электродвигателя</label>
+            <div className="flex">
+              <input
+                type="text"
+                name="motorId"
+                value={formData.motorId}
+                onChange={handleChange}
+                placeholder="Введите ID электродвигателя"
+                className="flex-grow mr-2"
+              />
+              <button
+                type="button"
+                onClick={() => setIsScannerOpen(!isScannerOpen)}
+                className="submit-button"
+              >
+                {isScannerOpen ? 'Закрыть QR' : 'Сканировать QR'}
+              </button>
+            </div>
+            {isScannerOpen && <QRScanner onResult={handleScanResult} isScannerOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} />}
+          </div>
           <FormField
             label="Название товара"
             type="text"
@@ -157,20 +185,7 @@ import React, { useState } from 'react';
             onChange={handleChange}
             placeholder="Введите ID торцевого уплотнения"
           />
-          <button type="submit" className="submit-button" style={{
-            boxShadow: '0px 2px 4px 0px rgba(0, 0, 0, 0.25)',
-            width: '100%',
-            height: '48px',
-            borderRadius: '0.5rem',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            fontWeight: '600',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            border: 'none',
-            cursor: 'pointer',
-          }}>
+          <button type="submit" className="submit-button">
             Отправить
           </button>
         </form>

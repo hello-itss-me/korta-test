@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { BrowserQRCodeReader } from '@zxing/browser';
+import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
 
 interface QRScannerProps {
@@ -9,45 +9,70 @@ interface QRScannerProps {
 }
 
 export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
-  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const readerId = 'qr-reader';
 
   useEffect(() => {
-    if (isScannerOpen && videoRef.current) {
-      const startScanner = async () => {
-        try {
-          const hasPermission = await navigator.mediaDevices.getUserMedia({ video: true });
-          if (!hasPermission) {
-            toast.error('Необходимо разрешение на использование камеры');
-            onClose();
-            return;
-          }
-
-          codeReaderRef.current = new BrowserQRCodeReader();
-          const result = await codeReaderRef.current.decodeFromVideoDevice(undefined, videoRef.current);
-          onResult(result.getText());
-          onClose();
-        } catch (error) {
-          console.error('Ошибка при сканировании:', error);
-          toast.error('Ошибка при сканировании QR-кода');
-          onClose();
-        }
-      };
-
-      startScanner();
-    }
-
-    return () => {
-      if (codeReaderRef.current) {
-        codeReaderRef.current.reset();
-        codeReaderRef.current = null;
+    const requestCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop());
+        return true;
+      } catch (error) {
+        console.error('Error requesting camera permission:', error);
+        toast.error('Ошибка при запросе доступа к камере');
+        return false;
       }
     };
+
+    const startScanner = async () => {
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) return;
+
+      const config = { fps: 5, qrbox: 250 };
+      const html5QrCode = new Html5Qrcode(readerId, { formatsToSupport: [0] });
+      scannerRef.current = html5QrCode;
+
+      try {
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          config,
+          (decodedText: string) => {
+            onResult(decodedText);
+            stopScanner();
+            onClose();
+          },
+          undefined
+        );
+      } catch (error) {
+        console.error('Failed to start scanner:', error);
+        toast.error('Ошибка при запуске сканера');
+      }
+    };
+
+    const stopScanner = () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop()
+          .then(() => {
+            console.log('QR Scanner stopped.');
+            scannerRef.current = null;
+          })
+          .catch((error) => {
+            console.error('Failed to stop scanner:', error);
+          });
+      }
+    };
+
+    if (isScannerOpen) {
+      const timeoutId = setTimeout(startScanner, 300); // Delay start
+      return () => {
+        clearTimeout(timeoutId);
+        stopScanner();
+      };
+    } else {
+      stopScanner();
+    }
   }, [isScannerOpen, onResult, onClose]);
 
-  return (
-    <div style={{ display: isScannerOpen ? 'block' : 'none' }}>
-      <video ref={videoRef} width="300" height="200" style={{ border: '1px solid gray' }} />
-    </div>
-  );
+  return <div id={readerId} style={{ width: '100%' }} />;
 }
