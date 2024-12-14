@@ -137,8 +137,5 @@
       .content-area {
         @apply ml-64;
       }
-      .nav-logo {
-        @apply ml-[-10px];
-      }
     }
   }

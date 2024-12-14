@@ -17,7 +17,7 @@ import React from 'react';
           <div className="flex">
             <Navigation />
             <div className="content-area flex-grow">
-            <Routes>
+              <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/assembly" element={<AssemblyPage />} />
                 <Route path="/disassembly" element={<DisassemblyPage />} />
