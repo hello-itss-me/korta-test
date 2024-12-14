@@ -30,8 +30,14 @@ import React, { useState } from 'react';
       };
 
       const handleScanResult = (result: string) => {
-        setFormData(prev => ({ ...prev, motorId: result }));
-        fetchProductData(result);
+        const url = new URL(result);
+        const id = url.searchParams.get('id');
+        if (id) {
+          setFormData(prev => ({ ...prev, motorId: id }));
+          fetchProductData(id);
+        } else {
+          toast.error('Не удалось извлечь ID из QR-кода');
+        }
         setIsScannerOpen(false);
       };
 
