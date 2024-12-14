@@ -15,41 +15,43 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
   useEffect(() => {
     const requestCameraPermission = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-        return true;
+        return stream;
       } catch (error) {
         console.error('Error requesting camera permission:', error);
         toast.error('Ошибка при запросе доступа к камере');
-        return false;
+        return null;
       }
     };
 
     const startScanner = async () => {
-      const hasPermission = await requestCameraPermission();
-      if (!hasPermission) return;
+      const stream = await requestCameraPermission();
+      if (!stream) return;
 
       const config = { fps: 5, qrbox: 250 };
       const html5QrCode = new Html5Qrcode('qr-reader', { formatsToSupport: [0] });
       scannerRef.current = html5QrCode;
 
-      try {
-        await html5QrCode.start(
-          { facingMode: 'environment' },
-          config,
-          (decodedText: string) => {
-            onResult(decodedText);
-            stopScanner();
-            onClose();
-          },
-          undefined
-        );
-      } catch (error) {
-        console.error('Failed to start scanner:', error);
-        toast.error('Ошибка при запуске сканера');
-      }
+      setTimeout(async () => {
+        try {
+          await html5QrCode.start(
+            { facingMode: 'environment' },
+            config,
+            (decodedText: string) => {
+              onResult(decodedText);
+              stopScanner();
+              onClose();
+            },
+            undefined
+          );
+        } catch (error) {
+          console.error('Failed to start scanner:', error);
+          toast.error('Ошибка при запуске сканера');
+        }
+      }, 500); // Delay of 500ms
     };
 
     const stopScanner = () => {
