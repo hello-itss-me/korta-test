@@ -4,10 +4,11 @@ import { toast } from 'react-hot-toast';
 
 interface QRScannerProps {
   onResult: (result: string) => void;
+  isScannerOpen: boolean;
   onClose: () => void;
 }
 
-export function QRScanner({ onResult, onClose }: QRScannerProps) {
+export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
@@ -37,8 +38,6 @@ export function QRScanner({ onResult, onClose }: QRScannerProps) {
           config,
           (decodedText: string) => {
             onResult(decodedText);
-            stopScanner();
-            onClose();
           },
           undefined
         );
@@ -61,12 +60,16 @@ export function QRScanner({ onResult, onClose }: QRScannerProps) {
       }
     };
 
-    startScanner();
+    if (isScannerOpen) {
+      startScanner();
+    } else {
+      stopScanner();
+    }
 
     return () => {
       stopScanner();
     };
-  }, [onResult, onClose]);
+  }, [onResult, isScannerOpen, onClose]);
 
   return <div id="qr-reader" style={{ width: '100%' }} />;
 }
