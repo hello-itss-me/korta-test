@@ -1,37 +1,72 @@
-import React, { useState, useRef, LegacyRef } from 'react';
-import { QrReader } from 'react-qr-reader';
+import React, { useEffect, useRef } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
 
 interface QRScannerProps {
   onResult: (result: string) => void;
-  isScannerOpen: boolean;
   onClose: () => void;
 }
 
-export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
-  const qrReaderRef = useRef<QrReader>(null);
+export function QRScanner({ onResult, onClose }: QRScannerProps) {
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const handleScan = (data: string | null) => {
-    if (data) {
-      onResult(data);
-      onClose();
-    }
-  };
+  useEffect(() => {
+    const requestCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop()); // Stop the stream immediately
+        return true;
+      } catch (error) {
+        console.error('Error requesting camera permission:', error);
+        toast.error('Ошибка при запросе доступа к камере');
+        return false;
+      }
+    };
 
-  const handleError = (err: any) => {
-    console.error(err);
-    toast.error('Ошибка сканирования QR-кода');
-  };
+    const startScanner = async () => {
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) return;
 
-  return (
-    <div style={{ display: isScannerOpen ? 'block' : 'none' }}>
-      <QrReader
-        ref={qrReaderRef as LegacyRef<QrReader>}
-        delay={300}
-        onError={handleError}
-        onScan={handleScan}
-        style={{ width: '100%' }}
-      />
-    </div>
-  );
+      const config = { fps: 5, qrbox: 250 };
+      const html5QrCode = new Html5Qrcode('qr-reader', { formatsToSupport: [0] }); // Specify QR_CODE format
+      scannerRef.current = html5QrCode;
+
+      try {
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          config,
+          (decodedText: string) => {
+            onResult(decodedText);
+            stopScanner();
+            onClose();
+          },
+          undefined
+        );
+      } catch (error) {
+        console.error('Failed to start scanner:', error);
+        toast.error('Ошибка при запуске сканера');
+      }
+    };
+
+    const stopScanner = () => {
+      if (scannerRef.current) {
+        scannerRef.current
+          .stop()
+          .then(() => {
+            console.log('QR Scanner stopped.');
+          })
+          .catch((error) => {
+            console.error('Failed to stop scanner:', error);
+          });
+      }
+    };
+
+    startScanner();
+
+    return () => {
+      stopScanner();
+    };
+  }, [onResult, onClose]);
+
+  return <div id="qr-reader" style={{ width: '100%' }} />;
 }
