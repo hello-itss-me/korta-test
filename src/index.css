@@ -86,7 +86,7 @@
       }
 
       .nav-icon {
-        @apply w-5 h-5; /* Reduced icon size for mobile */
+        @apply w-7 h-7; /* Increased icon size for mobile */
       }
 
       .nav-label {
