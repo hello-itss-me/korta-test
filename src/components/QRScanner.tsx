@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
 
@@ -11,28 +11,31 @@ interface QRScannerProps {
 export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     const requestCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        setStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.play();
         }
-        return stream;
+        return true;
       } catch (error) {
         console.error('Error requesting camera permission:', error);
         toast.error('Ошибка при запросе доступа к камере');
-        return null;
+        return false;
       }
     };
 
     const startScanner = async () => {
-      const stream = await requestCameraPermission();
-      if (!stream) return;
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) return;
 
       const config = { fps: 5, qrbox: 250 };
-      const html5QrCode = new Html5Qrcode(videoRef.current, { formatsToSupport: [0] }); // Use video element directly
+      const html5QrCode = new Html5Qrcode('qr-reader', { formatsToSupport: [0] });
       scannerRef.current = html5QrCode;
 
       setTimeout(async () => {
@@ -60,16 +63,14 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
           .stop()
           .then(() => {
             console.log('QR Scanner stopped.');
-            if (videoRef.current && videoRef.current.srcObject) {
-              const stream = videoRef.current.srcObject as MediaStream;
-              const tracks = stream.getTracks();
-              tracks.forEach(track => track.stop());
-              videoRef.current.srcObject = null;
-            }
           })
           .catch((error) => {
             console.error('Failed to stop scanner:', error);
           });
+      }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
       }
     };
 
@@ -85,8 +86,9 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
   }, [onResult, isScannerOpen, onClose]);
 
   return (
-    <div style={{ display: isScannerOpen ? 'block' : 'none' }}>
-      <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%' }} />
+    <div>
+      <div id="qr-reader" style={{ width: '100%', display: isScannerOpen ? 'block' : 'none' }} />
+      <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', display: isScannerOpen ? 'block' : 'none' }} />
     </div>
   );
 }
