@@ -1,10 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
     import { FormField } from './FormField';
     import { supabase } from '../../lib/supabase';
     import { toast } from 'react-hot-toast';
     import { useProductData } from '../../hooks/useProductData';
-    import { Html5QrcodeScanner } from 'html5-qrcode';
-    import { QrCode } from 'lucide-react';
+    import { QRScanner } from '../QRScanner';
 
     export function DisassemblyForm() {
       const [formData, setFormData] = useState({
@@ -15,8 +14,6 @@ import React, { useState, useRef } from 'react';
         disassemblyDate: '',
         disassemblyTime: ''
       });
-      const [scanning, setScanning] = useState(false);
-      const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
       const { fetchProductData } = useProductData(setFormData);
 
@@ -27,6 +24,11 @@ import React, { useState, useRef } from 'react';
         if (name === 'motorId' && value) {
           fetchProductData(value);
         }
+      };
+
+      const handleScanResult = (result: string) => {
+        setFormData(prev => ({ ...prev, motorId: result }));
+        fetchProductData(result);
       };
 
       const handleSubmit = async (e: React.FormEvent) => {
@@ -55,44 +57,22 @@ import React, { useState, useRef } from 'react';
         }
       };
 
-      const startScanning = () => {
-        setScanning(true);
-        scannerRef.current = new Html5QrcodeScanner(
-          "qr-reader",
-          { fps: 10, qrbox: 250 },
-          /* verbose= */ false
-        );
-        scannerRef.current.render(onScanSuccess, onScanError);
-      };
-
-      const onScanSuccess = (decodedText: string) => {
-        setFormData(prev => ({ ...prev, motorId: decodedText }));
-        if (scannerRef.current) {
-          scannerRef.current.clear();
-        }
-        setScanning(false);
-      };
-
-      const onScanError = (errorMessage: string) => {
-        console.warn(errorMessage);
-      };
-
       return (
         <form className="form" onSubmit={handleSubmit}>
-          <div className="flex items-center space-x-2">
-            <FormField
-              label="ID Электродвигателя"
-              type="text"
-              name="motorId"
-              value={formData.motorId}
-              onChange={handleChange}
-              placeholder="Введите ID электродвигателя"
-            />
-            <button type="button" onClick={startScanning} className="px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 active:bg-gray-400" title="Сканировать QR-код">
-              <QrCode size={24} />
-            </button>
+          <div className="input-group">
+            <label className="label">ID Электродвигателя</label>
+            <div className="flex">
+              <input
+                type="text"
+                name="motorId"
+                value={formData.motorId}
+                onChange={handleChange}
+                placeholder="Введите ID электродвигателя"
+                className="flex-grow mr-2"
+              />
+              <QRScanner onResult={handleScanResult} />
+            </div>
           </div>
-          {scanning && <div id="qr-reader" className="w-full h-64"></div>}
           <FormField
             label="Название товара"
             type="text"

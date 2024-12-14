@@ -1,31 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Test</title>
-    <link rel="manifest" href="manifest.json">
-    <style>
-        #video {
-            width: 100%;
-            max-width: 400px;
-            height: auto;
-        }
-    </style>
-</head>
-<body>
-    <h1>Camera Test</h1>
-    <video id="video" autoplay></video>
-    <script>
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                const video = document.getElementById('video');
-                video.srcObject = stream;
-            })
-            .catch(error => {
-                console.error('Error accessing camera:', error);
-                alert('Error accessing camera: ' + error.message);
-            });
-    </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
