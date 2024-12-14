@@ -32,7 +32,7 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
       if (!stream) return;
 
       const config = { fps: 5, qrbox: 250 };
-      const html5QrCode = new Html5Qrcode('qr-reader', { formatsToSupport: [0] });
+      const html5QrCode = new Html5Qrcode(videoRef.current, { formatsToSupport: [0] }); // Use video element directly
       scannerRef.current = html5QrCode;
 
       setTimeout(async () => {
@@ -85,9 +85,8 @@ export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) 
   }, [onResult, isScannerOpen, onClose]);
 
   return (
-    <div>
-      <div id="qr-reader" style={{ width: '100%', display: isScannerOpen ? 'block' : 'none' }} />
-      <video ref={videoRef} autoPlay playsInline muted style={{ display: isScannerOpen ? 'block' : 'none', width: '100%' }} />
+    <div style={{ display: isScannerOpen ? 'block' : 'none' }}>
+      <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%' }} />
     </div>
   );
 }
