@@ -17,8 +17,6 @@ import React, { useState } from 'react';
         sealId: ''
       });
 
-      const [isScannerOpen, setIsScannerOpen] = useState(false);
-
       const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -38,7 +36,6 @@ import React, { useState } from 'react';
         } else {
           toast.error('Не удалось извлечь ID из QR-кода');
         }
-        setIsScannerOpen(false);
       };
 
       const fetchProductData = async (motorId: string) => {
@@ -111,23 +108,8 @@ import React, { useState } from 'react';
                 placeholder="Введите ID электродвигателя"
                 className="flex-grow mr-2 border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <button
-                type="button"
-                onClick={() => setIsScannerOpen(!isScannerOpen)}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
-              >
-                {isScannerOpen ? 'Закрыть' : 'QR'}
-              </button>
+              <QRScanner onResult={handleScanResult} />
             </div>
-            {isScannerOpen && (
-              <div className="mt-2">
-                <QRScanner
-                  onResult={handleScanResult}
-                  isScannerOpen={isScannerOpen}
-                  onClose={() => setIsScannerOpen(false)}
-                />
-              </div>
-            )}
           </div>
           <FormField
             label="Название товара"
