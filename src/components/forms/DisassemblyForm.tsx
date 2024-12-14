@@ -16,6 +16,7 @@ import React, { useState } from 'react';
       });
 
       const { fetchProductData } = useProductData(setFormData);
+      const [isScannerOpen, setIsScannerOpen] = useState(false);
 
       const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -29,6 +30,7 @@ import React, { useState } from 'react';
       const handleScanResult = (result: string) => {
         setFormData(prev => ({ ...prev, motorId: result }));
         fetchProductData(result);
+        setIsScannerOpen(false);
       };
 
       const handleSubmit = async (e: React.FormEvent) => {
@@ -70,8 +72,15 @@ import React, { useState } from 'react';
                 placeholder="Введите ID электродвигателя"
                 className="flex-grow mr-2"
               />
-              <QRScanner onResult={handleScanResult} />
+              <button
+                type="button"
+                onClick={() => setIsScannerOpen(!isScannerOpen)}
+                className="submit-button"
+              >
+                {isScannerOpen ? 'Закрыть QR' : 'Сканировать QR'}
+              </button>
             </div>
+            {isScannerOpen && <QRScanner onResult={handleScanResult} />}
           </div>
           <FormField
             label="Название товара"
