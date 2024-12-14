@@ -4,15 +4,16 @@ import { toast } from 'react-hot-toast';
 
 interface QRScannerProps {
   onResult: (result: string) => void;
+  isScannerOpen: boolean;
+  onClose: () => void;
 }
 
-export function QRScanner({ onResult }: QRScannerProps) {
-  const [isScanning, setIsScanning] = useState(false);
+export function QRScanner({ onResult, isScannerOpen, onClose }: QRScannerProps) {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const readerDivRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isScanning && readerDivRef.current) {
+    if (isScannerOpen && readerDivRef.current) {
       const scanner = new Html5QrcodeScanner(
         readerDivRef.current,
         {
@@ -34,19 +35,12 @@ export function QRScanner({ onResult }: QRScannerProps) {
         scannerRef.current.clear();
       }
     };
-  }, [isScanning]);
+  }, [isScannerOpen]);
 
-  const startScanning = () => {
-    setIsScanning(true);
-  };
-
-  const stopScanning = () => {
-    setIsScanning(false);
-  };
 
   const onScanSuccess = (decodedText: string) => {
     onResult(decodedText);
-    stopScanning();
+    onClose();
   };
 
   const onScanError = (errorMessage: string) => {
@@ -55,17 +49,6 @@ export function QRScanner({ onResult }: QRScannerProps) {
   };
 
   return (
-    <div>
-      {!isScanning ? (
-        <button onClick={startScanning} className="submit-button">
-          Сканировать QR-код
-        </button>
-      ) : (
-        <button onClick={stopScanning} className="submit-button">
-          Остановить сканирование
-        </button>
-      )}
-      <div ref={readerDivRef} style={{ display: isScanning ? 'block' : 'none' }} />
-    </div>
+    <div ref={readerDivRef} style={{ display: isScannerOpen ? 'block' : 'none' }} />
   );
 }

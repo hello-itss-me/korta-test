@@ -80,7 +80,7 @@ import React, { useState } from 'react';
                 {isScannerOpen ? 'Закрыть QR' : 'Сканировать QR'}
               </button>
             </div>
-            {isScannerOpen && <QRScanner onResult={handleScanResult} />}
+            {isScannerOpen && <QRScanner onResult={handleScanResult} isScannerOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} />}
           </div>
           <FormField
             label="Название товара"
